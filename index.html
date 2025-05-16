@@ -21,16 +21,17 @@
       border: 2px solid #888;
       margin: 10px 0;
     }
-    button {
+    button, select {
       padding: 10px 20px;
       font-size: 16px;
+      margin: 5px;
       background-color: #007bff;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
     }
-    button:hover {
+    button:hover, select:hover {
       background-color: #0056b3;
     }
     img {
@@ -50,6 +51,8 @@
 
   <h1>OD Device Test</h1>
 
+  <select id="cameraSelect"></select>
+  <br>
   <video id="video" autoplay playsinline></video>
   <br>
   <button id="capture">📸 Capturar Foto + Ubicación</button>
@@ -64,39 +67,48 @@
     const photo = document.getElementById('photo');
     const locationP = document.getElementById('location');
     const captureBtn = document.getElementById('capture');
+    const cameraSelect = document.getElementById('cameraSelect');
+    let currentStream;
 
-    // Acceder a la cámara
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(error => {
-        alert('Error al acceder a la cámara: ' + error.message);
+    function stopStream() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+    }
+
+    function startCamera(deviceId) {
+      stopStream();
+      const constraints = {
+        video: { deviceId: deviceId ? { exact: deviceId } : undefined }
+      };
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+          currentStream = stream;
+          video.srcObject = stream;
+        })
+        .catch(error => {
+          alert('Error al acceder a la cámara: ' + error.message);
+        });
+    }
+
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      videoDevices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `Cámara ${index + 1}`;
+        cameraSelect.appendChild(option);
       });
+      if (videoDevices.length > 0) {
+        startCamera(videoDevices[0].deviceId);
+      }
+    });
 
-    // Capturar foto + ubicación
+    cameraSelect.addEventListener('change', () => {
+      startCamera(cameraSelect.value);
+    });
+
     captureBtn.addEventListener('click', () => {
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      photo.src = canvas.toDataURL('image/png');
-
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            locationP.textContent = `Ubicación: Latitud ${latitude.toFixed(6)}, Longitud ${longitude.toFixed(6)}`;
-          },
-          (error) => {
-            locationP.textContent = "Error al obtener ubicación: " + error.message;
-          }
-        );
-      } else {
-        locationP.textContent = "Geolocalización no soportada por este navegador.";
-      }
-    });
-  </script>
-
-</body>
-</html>
