@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OD Device Test</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f2f5;
+    }
+    h1 {
+      color: #333;
+    }
+    video, canvas {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 10px;
+      border: 2px solid #888;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    img {
+      margin-top: 10px;
+      max-width: 360px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    #location {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>OD Device Test</h1>
+
+  <video id="video" autoplay playsinline></video>
+  <br>
+  <button id="capture">📸 Capturar Foto + Ubicación</button>
+  <canvas id="canvas" style="display: none;"></canvas>
+  <br>
+  <img id="photo" alt="Foto capturada" />
+  <p id="location">Ubicación: esperando...</p>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo');
+    const locationP = document.getElementById('location');
+    const captureBtn = document.getElementById('capture');
+
+    // Acceder a la cámara
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(error => {
+        alert('Error al acceder a la cámara: ' + error.message);
+      });
+
+    // Capturar foto + ubicación
+    captureBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      photo.src = canvas.toDataURL('image/png');
+
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            locationP.textContent = `Ubicación: Latitud ${latitude.toFixed(6)}, Longitud ${longitude.toFixed(6)}`;
+          },
+          (error) => {
+            locationP.textContent = "Error al obtener ubicación: " + error.message;
+          }
+        );
+      } else {
+        locationP.textContent = "Geolocalización no soportada por este navegador.";
+      }
+    });
+  </script>
+
+</body>
+</html>
