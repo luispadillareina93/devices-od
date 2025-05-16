@@ -112,3 +112,23 @@
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      photo.src = canvas.toDataURL('image/png');
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            locationP.textContent = `Ubicación: Latitud ${latitude.toFixed(6)}, Longitud ${longitude.toFixed(6)}`;
+          },
+          (error) => {
+            locationP.textContent = "Error al obtener ubicación: " + error.message;
+          }
+        );
+      } else {
+        locationP.textContent = "Geolocalización no soportada por este navegador.";
+      }
+    });
+  </script>
+
+</body>
+</html>
